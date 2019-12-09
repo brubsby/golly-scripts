@@ -35,7 +35,7 @@ end
 
 local last_rule = 262143
 for rule_integer = last + 1, last_rule do
-  local percent_done = round(1000 * rule_integer / last_rule) / 100
+  local percent_done = round(10000 * rule_integer / last_rule) / 100
   local percent_status = percent_done .. "%"
   local ruleint_status = "ruleint: " .. rule_integer
   local birth_rules = rule_integer >> 9
