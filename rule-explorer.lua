@@ -2,15 +2,19 @@ local g = golly()
 
 local ruleints_filename = "ruleints.txt"
 local rulestrings_filename = "rulestrings.txt"
-local toroidal_params = ":T16,16"
-local bounding_rect = {-8, -8, 16, 16}
-local max_pop = 16 * 16
+local side_length = 16
+local toroidal_params = ":T" .. side_length .. "," .. side_length
+local bounding_rect = {side_length/2 - side_length, side_length/2 - side_length, side_length, side_length}
+local max_pop = side_length * side_length
+local trivial_end_pop_cutoff = 0.25
+local trivial_end_pop_thresholds = {max_pop * trivial_end_pop_cutoff, (1 - trivial_end_pop_cutoff) * max_pop}
 local total_steps = 1000
 local num_tests = 1
 
 -- debug
 g.autoupdate(false)
-local show_successes = false
+local show_successes = true
+local save_trivial_ending = false
 local save = true
 
 function round(n)
@@ -36,8 +40,8 @@ for rule_integer = last + 1, last_rule do
   local ruleint_status = "ruleint: " .. rule_integer
   local birth_rules = rule_integer >> 9
   local survive_rules = rule_integer & 1023 --(2^10)-1
-  local birth_string = "B" .. ""
-  local survive_string = "S" .. ""
+  local birth_string = "B"
+  local survive_string = "S"
   for string_bit = 0, 8 do
     local bit_mask = 2 ^ string_bit
     if bit_mask & birth_rules ~= 0 then
@@ -83,15 +87,20 @@ for rule_integer = last + 1, last_rule do
     end
   end
   if not fail then
-    local trivial_end = g.empty() or tonumber(g.getpop()) == max_pop
-    if show_successes and not trivial_end then g.update() end
-    if save then
-      local ruleints_file = io.open(ruleints_filename, "a+")
-      local rulestrings_file = io.open(rulestrings_filename, "a+")
-      ruleints_file:write(rule_integer, "\n")
-      rulestrings_file:write(rule_string, "\n")
-      ruleints_file:close()
-      rulestrings_file:close()
+    local num_pop = tonumber(g.getpop())
+    local trivial_end = num_pop < trivial_end_pop_thresholds[1] or num_pop > trivial_end_pop_thresholds[2]
+    if save_trivial_ending or (not save_trivial_ending and not trivial_end) then
+      if show_successes then 
+        g.update()
+      end
+      if save then
+        local ruleints_file = io.open(ruleints_filename, "a+")
+        local rulestrings_file = io.open(rulestrings_filename, "a+")
+        ruleints_file:write(rule_integer, "\n")
+        rulestrings_file:write(rule_string, "\n")
+        ruleints_file:close()
+        rulestrings_file:close()
+      end
     end
   end
 end
